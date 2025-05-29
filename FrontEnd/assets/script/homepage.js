@@ -5,6 +5,36 @@
 import { APIWorks, APICategories } from "./API.js";
 
 ////////////////////////////////////////
+///// Utilitaires /////////////////////
+////////////////////////////////////////
+
+// Fonction pour créer un élément figure
+const createFigureElement = (figure) => {
+    const figureElement = document.createElement("figure");
+    figureElement.id = figure.id;
+
+    const imgElement = document.createElement("img");
+    imgElement.src = figure.imageUrl;
+    imgElement.alt = figure.title;
+
+    const captionElement = document.createElement("figcaption");
+    captionElement.textContent = figure.title;
+
+    figureElement.appendChild(imgElement);
+    figureElement.appendChild(captionElement);
+    return figureElement;
+};
+
+// Fonction pour mettre à jour la galerie
+const updateGallery = (data) => {
+    const gallery = document.querySelector(".gallery");
+    gallery.innerHTML = "";
+    data.forEach(figure => {
+        gallery.appendChild(createFigureElement(figure));
+    });
+};
+
+////////////////////////////////////////
 ///// Génération des boutons filtre ////
 ////////////////////////////////////////
 
@@ -12,10 +42,12 @@ const createFilterButtons = async () => {
     const buttonsContainer = document.getElementById("buttons");
     
     try {
-        // Récupérer les catégories depuis l'API
-        const categories = await APICategories();
+        const [categories, works] = await Promise.all([
+            APICategories(),
+            APIWorks()
+        ]);
         
-        // Ajouter le bouton "Tous" en premier
+        // Ajouter le bouton "Tous"
         const allButton = document.createElement("button");
         allButton.id = "0";
         allButton.className = "btn-filter btn-filterActive";
@@ -23,7 +55,7 @@ const createFilterButtons = async () => {
         buttonsContainer.appendChild(allButton);
 
         // Générer les boutons pour chaque catégorie
-        categories.forEach((category) => {
+        categories.forEach(category => {
             const button = document.createElement("button");
             button.id = category.id;
             button.className = "btn-filter";
@@ -32,13 +64,12 @@ const createFilterButtons = async () => {
         });
 
         // Ajouter les événements aux boutons
-        const works = await APIWorks(); // Récupérer les données une seule fois
         const buttons = document.querySelectorAll(".btn-filter");
-        buttons.forEach((button) =>
+        buttons.forEach(button => 
             button.addEventListener("click", (event) => btnFilter(event, works, buttons))
         );
     } catch (err) {
-        console.error("Erreur lors de la récupération des catégories :", err);
+        console.error("Erreur lors de l'initialisation des filtres :", err);
     }
 };
 
@@ -49,42 +80,15 @@ const createFilterButtons = async () => {
 export const fetchWorks = async () => {
     try {
         const data = await APIWorks();
-        const gallery = document.querySelector(".gallery");
-
-        // Générer les images dynamiquement
-        // Vider la galerie avant d'ajouter de nouvelles oeuvres
-        gallery.innerHTML = "";
-
-        // Parcourir les données et créer les éléments pour chaque oeuvre
-        data.forEach((figure) => {
-            // Créer un élément <figure> pour chaque oeuvre
-            const figureElement = document.createElement("figure");
-            figureElement.id = figure.id;
-
-            // Créer un élément <img> pour l'image de l'oeuvre
-            const imgElement = document.createElement("img");
-            imgElement.src = figure.imageUrl;
-            imgElement.alt = figure.title;
-
-            // Créer un élément <figcaption> pour le titre de l'oeuvre
-            const captionElement = document.createElement("figcaption");
-            captionElement.textContent = figure.title;
-
-            // Ajouter l'image et le titre à l'élément <figure>
-            figureElement.appendChild(imgElement);
-            figureElement.appendChild(captionElement);
-
-            // Ajouter l'élément <figure> à la galerie
-            gallery.appendChild(figureElement);
-        });
-
-        // Ajouter les événements aux boutons de filtre
+        updateGallery(data);
+        
+        // Mettre à jour les événements des boutons
         const buttons = document.querySelectorAll(".btn-filter");
-        buttons.forEach((button) =>
+        buttons.forEach(button => 
             button.addEventListener("click", (event) => btnFilter(event, data, buttons))
         );
     } catch (err) {
-        console.error("Erreur lors de la récupération des oeuvres :", err);
+        console.error("Erreur lors de la récupération des œuvres :", err);
     }
 };
 
@@ -95,31 +99,16 @@ export const fetchWorks = async () => {
 const btnFilter = (event, data, buttons) => {
     const categoryId = Number(event.target.id);
 
-    // Activer le bouton sélectionné
-    buttons.forEach((btn) => btn.classList.remove("btn-filterActive"));
+    // Mettre à jour l'état des boutons
+    buttons.forEach(btn => btn.classList.remove("btn-filterActive"));
     event.target.classList.add("btn-filterActive");
 
-    // Filtrer les oeuvres
-    const filteredData = categoryId === 0 ? data : data.filter((item) => item.categoryId === categoryId);
-
-    // Afficher les oeuvres filtrées
-    const gallery = document.querySelector(".gallery");
-    gallery.innerHTML = "";
-    filteredData.forEach((figure) => {
-        const figureElement = document.createElement("figure");
-        figureElement.id = figure.id;
-
-        const imgElement = document.createElement("img");
-        imgElement.src = figure.imageUrl;
-        imgElement.alt = figure.title;
-
-        const captionElement = document.createElement("figcaption");
-        captionElement.textContent = figure.title;
-
-        figureElement.appendChild(imgElement);
-        figureElement.appendChild(captionElement);
-        gallery.appendChild(figureElement);
-    });
+    // Filtrer et afficher les œuvres
+    const filteredData = categoryId === 0 
+        ? data 
+        : data.filter(item => item.categoryId === categoryId);
+    
+    updateGallery(filteredData);
 };
 
 ////////////////////////////////////////
@@ -127,27 +116,25 @@ const btnFilter = (event, data, buttons) => {
 ////////////////////////////////////////
 
 const editMode = () => {
-    const editBanner = document.getElementById("edit-banner");
-    const logintLink = document.getElementById("login-link");
-    const logoutLink = document.getElementById("logout-link");
-    const filter = document.getElementById("buttons");
-    const changeButton = document.querySelector("[data-open-modal");
+    const elements = {
+        editBanner: document.getElementById("edit-banner"),
+        loginLink: document.getElementById("login-link"),
+        logoutLink: document.getElementById("logout-link"),
+        filter: document.getElementById("buttons"),
+        changeButton: document.querySelector("[data-open-modal]")
+    };
 
     const userToken = sessionStorage.getItem("accessToken");
+    const isTokenValid = !!userToken;
 
-    const isTokenValide = !!userToken;
-
-    if (isTokenValide) {
-        editBanner.style.display = "flex";
-        logintLink.style.display = "none";
-        logoutLink.style.display = "flex";
-        filter.style.display = "none";
-        changeButton.style.display = "flex";
-    } else {
-        console.log("erreur");
+    if (isTokenValid) {
+        elements.editBanner.style.display = "flex";
+        elements.loginLink.style.display = "none";
+        elements.logoutLink.style.display = "flex";
+        elements.filter.style.display = "none";
+        elements.changeButton.style.display = "flex";
     }
 };
-editMode();
 
 const logoutUser = () => {
     sessionStorage.removeItem("accessToken");
@@ -159,15 +146,21 @@ const logoutUser = () => {
 ////////////////////////////////////////
 
 document.addEventListener("DOMContentLoaded", async () => {
-    await createFilterButtons(); // Attendre que les boutons soient créés
-    fetchWorks(); // Charger les oeuvres
-
-    const logoutLink = document.getElementById("logout-link");
-    if (logoutLink) {
-        logoutLink.addEventListener("click", (event) => {
-            event.preventDefault();
-            logoutUser();
-        });
+    try {
+        await createFilterButtons();
+        await fetchWorks();
+        
+        const logoutLink = document.getElementById("logout-link");
+        if (logoutLink) {
+            logoutLink.addEventListener("click", (event) => {
+                event.preventDefault();
+                logoutUser();
+            });
+        }
+        
+        editMode();
+    } catch (err) {
+        console.error("Erreur lors de l'initialisation de la page :", err);
     }
 });
 

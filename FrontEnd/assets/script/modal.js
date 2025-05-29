@@ -9,37 +9,37 @@ import { fetchWorks } from "./homepage.js";
 /// Récupération des oeuvres ///////////
 ////////////////////////////////////////
 
-const fetchWorksForModal = async () => {
+const updateWorks = async () => {
     try {
         const data = await APIWorks();
+        console.log("Mise à jour des œuvres en cours...");
+        
+        // Mise à jour de la modale
         const modalGallery = document.querySelector(".modal-gallery");
-        if (!modalGallery) {
-            console.error("Élément .modal-gallery non trouvé");
-            return;
+        if (modalGallery) {
+            modalGallery.innerHTML = "";
+            data.forEach((figure) => {
+                const figureElement = document.createElement("figure");
+                figureElement.id = `modal-figure-${figure.id}`;
+
+                const imgElement = document.createElement("img");
+                imgElement.src = figure.imageUrl;
+                imgElement.alt = figure.title;
+
+                const deleteIcon = document.createElement("i");
+                deleteIcon.className = "fa-solid fa-trash-can delete-btn";
+                deleteIcon.dataset.id = figure.id;
+
+                figureElement.appendChild(imgElement);
+                figureElement.appendChild(deleteIcon);
+                modalGallery.appendChild(figureElement);
+            });
         }
-
-        modalGallery.innerHTML = "";
-        data.forEach((figure) => {
-            const figureElement = document.createElement("figure");
-            figureElement.id = `modal-figure-${figure.id}`;
-
-            const imgElement = document.createElement("img");
-            imgElement.src = figure.imageUrl;
-            imgElement.alt = figure.title;
-
-            const deleteIcon = document.createElement("i");
-            deleteIcon.className = "fa-solid fa-trash-can delete-btn";
-            deleteIcon.dataset.id = figure.id;
-
-            figureElement.appendChild(imgElement);
-            figureElement.appendChild(deleteIcon);
-            modalGallery.appendChild(figureElement);
-        });
-
-
+        // Mise à jour de la galerie principale
+        await fetchWorks();
+        console.log("Mise à jour des œuvres terminée avec succès");
     } catch (err) {
-        console.error("Erreur lors de la récupération des oeuvres :", err);
-        alert("Impossible de charger les images. Veuillez réessayer.");
+        console.error("Erreur lors de la mise à jour des œuvres :", err);
     }
 };
 
@@ -51,7 +51,7 @@ const modal = document.querySelector("[data-modal1]");
 const openButton = document.querySelector("[data-open-modal]");
 openButton.addEventListener("click", () => {
     modal.showModal();
-    fetchWorksForModal(); 
+    updateWorks();
 });
 
 const closeButton = document.querySelector("[data-close-modal]");
@@ -86,7 +86,7 @@ const returnButton = document.querySelector("[data-return-modal1]");
 returnButton.addEventListener("click", () => {
     modal2.close();
     modal.showModal();
-    fetchWorksForModal(); 
+    updateWorks();
 });
 
 ////////////////////////////////////////
@@ -117,13 +117,12 @@ const deleteMode = () => {
                     }
 
                     // Confirmer la suppression à l'utilisateur
+                    await updateWorks();
                     console.log("L'image a été supprimée avec succès");
-                    alert("L'image a été supprimée avec succès");
                 
                 }
             } catch (err) {
                 console.error("Erreur lors de la suppression :", err);
-                alert("Une erreur s'est produite lors de la suppression de l'image");
             }
         })
     );
@@ -136,7 +135,7 @@ const deleteMode = () => {
 document.addEventListener("DOMContentLoaded", () => {
     setupCategoryDropdown();
     setupAddPhotoForm();
-    fetchWorksForModal(); // Charger les oeuvres dans la modale
+    updateWorks();
 });
 
 const setupCategoryDropdown = async () => {
@@ -216,16 +215,14 @@ function setupAddPhotoForm() {
 
         APIAddPicture(formData, userToken)
             .then(() => {
-                alert("Image ajoutée avec succès");
+                console.log("Nouvelle image ajoutée avec succès");
                 resetForm(form, addPictureDiv);
                 modal2.close();
                 modal.showModal();
-                fetchWorksForModal();
-                fetchWorks();
+                updateWorks();
             })
             .catch(error => {
                 console.error("Erreur lors de l'ajout de l'image:", error);
-                alert("Une erreur s'est produite lors de l'ajout de l'image");
             });
     }
 }
