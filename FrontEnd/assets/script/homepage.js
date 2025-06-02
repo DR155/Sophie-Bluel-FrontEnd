@@ -67,10 +67,11 @@ const createFilterButtons = async () => {
     }
 };
 const createButton = (id, content, classCss) => {
-           const allButton = document.createElement("button");
-        allButton.id = id;
-        allButton.classList.add(...classCss);
-        allButton.textContent = content;
+           const button = document.createElement("button");
+        button.id = id;
+        button.classList.add(...classCss);
+        button.textContent = content;
+        return button;
 }
 ////////////////////////////////////////
 ///// Récupération et affichage ////////
