@@ -48,18 +48,12 @@ const createFilterButtons = async () => {
         ]);
         
         // Ajouter le bouton "Tous"
-        const allButton = document.createElement("button");
-        allButton.id = "0";
-        allButton.className = "btn-filter btn-filterActive";
-        allButton.textContent = "Tous";
+        const allButton = createButton(0, "Tous", ["btn-filter", "btn-filterActive"])
         buttonsContainer.appendChild(allButton);
 
         // Générer les boutons pour chaque catégorie
         categories.forEach(category => {
-            const button = document.createElement("button");
-            button.id = category.id;
-            button.className = "btn-filter";
-            button.textContent = category.name;
+            const button = createButton(category.id, category.name, ["btn-filter"])
             buttonsContainer.appendChild(button);
         });
 
@@ -72,7 +66,12 @@ const createFilterButtons = async () => {
         console.error("Erreur lors de l'initialisation des filtres :", err);
     }
 };
-
+const createButton = (id, content, classCss) => {
+           const allButton = document.createElement("button");
+        allButton.id = id;
+        allButton.classList.add(...classCss);
+        allButton.textContent = content;
+}
 ////////////////////////////////////////
 ///// Récupération et affichage ////////
 ////////////////////////////////////////
