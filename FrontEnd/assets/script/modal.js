@@ -102,6 +102,8 @@ const deleteMode = () => {
         btn.addEventListener("click", async (e) => {
             const figureId = e.target.getAttribute("data-id");
             try {
+                const errorMsg = document.querySelector(".modal-remove-error");
+                errorMsg.textContent ="";
                 const isDeleted = await APIDeletePicture(figureId, userToken);
                 if (isDeleted) {
                     // Vérifier l'existence des éléments avant de les supprimer
@@ -122,6 +124,8 @@ const deleteMode = () => {
                 
                 }
             } catch (err) {
+                const errorMsg = document.querySelector(".modal-remove-error");
+                errorMsg.textContent = "Une erreur est survenus lors de la suppression. Veuillez réessayer plus tard."
                 console.error("Erreur lors de la suppression :", err);
             }
         })
@@ -212,7 +216,8 @@ function setupAddPhotoForm() {
             alert("Vous devez être connecté pour ajouter une image");
             return;
         }
-
+               const errorMsg = document.querySelector(".modal-add-error");
+                errorMsg.textContent ="";
         APIAddPicture(formData, userToken)
             .then(() => {
                 console.log("Nouvelle image ajoutée avec succès");
@@ -222,6 +227,8 @@ function setupAddPhotoForm() {
                 updateWorks();
             })
             .catch(error => {
+                 const errorMsg = document.querySelector(".modal-add-error");
+                errorMsg.textContent = "Une erreur est survenus lors de l'ajout de l'image. Veuillez réessayer plus tard."
                 console.error("Erreur lors de l'ajout de l'image:", error);
             });
     }
